@@ -3,43 +3,87 @@ spring:
     active: dev
   threads:
     virtual:
-      enabled: true
+      enabled: true # Using virtual threads for better concurrency
+  datasource:
+    # Database connection details - Ensure these are secured in production (e.g., environment variables, secrets manager)
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/logdb}
+    username: ${DB_USER:loguser}
+    password: ${DB_PASSWORD:logpass}
+    driver-class-name: org.postgresql.Driver
   jvm:
     system-properties:
-      azure.keyvault.jca.certificates-refresh-interval-in-ms: 3600000
-      azure.keyvault.jca.keys-refresh-interval-in-ms: 3600000
+      # Refresh intervals for Azure Key Vault JCA provider
+      azure.keyvault.jca.certificates-refresh-interval-in-ms: 3600000 # 1 hour
+      azure.keyvault.jca.keys-refresh-interval-in-ms: 3600000 # 1 hour
+      # Consider security implications before disabling challenge resource verification
       azure.keyvault.jca.disable-challenge-resource-verification: true
       azure.tokenCredentialCacheEnabled: true
 server:
-  port: 8080
+  port: ${SERVER_PORT:8080}
+
+jpa:
+  hibernate:
+    # ddl-auto=update is convenient for development but risky for production. Use validate or none.
+    ddl-auto: ${HIBERNATE_DDL_AUTO:update}
+  database-platform: org.hibernate.dialect.PostgreSQLDialect
+  show-sql: ${JPA_SHOW_SQL:true}
+  properties:
+    hibernate.format_sql: ${HIBERNATE_FORMAT_SQL:true}
+
 nfse:
   service:
+    # URL for the Fortaleza NFSe SOAP service (homologation default)
     url: ${NFSE_SERVICE_URL:http://isshomo.sefin.fortaleza.ce.gov.br/grpfor-iss/ServiceGinfesImplService}
+    # Default timeouts for SOAP client (in milliseconds)
+    connection-timeout: ${SOAP_CONNECT_TIMEOUT:10000} # 10 seconds
+    read-timeout: ${SOAP_READ_TIMEOUT:60000} # 60 seconds
+  prestador:
+    # Prestador (Service Provider) details - Move to secure configuration
+    cnpj: ${PRESTADOR_CNPJ:27288254000103} # Example CNPJ - Replace with actual
+    inscricao-municipal: ${PRESTADOR_IM:469159} # Example IM - Replace with actual
+  cabecalho:
+    # Default header versions for SOAP requests
+    versao: ${CABECALHO_VERSAO:3} # Default version
+    versao-dados: ${CABECALHO_VERSAO_DADOS:3} # Default data version
+
 management:
   endpoints:
     web:
       exposure:
+        # Expose specific actuator endpoints (consider security implications)
         include: health,info,metrics,prometheus
+
 logging:
   level:
+    # Set default logging level
+    root: INFO
+    # Specific log levels for debugging/tracing
+    br.com.notafacil: DEBUG
     org.springframework.ws.client.MessageTracing: TRACE
-    org.springframework.ws.client.core.WebServiceTemplate: TRACE
+    org.springframework.ws.client.core.WebServiceTemplate: DEBUG
+    org.hibernate.SQL: DEBUG
+    org.hibernate.type.descriptor.sql.BasicBinder: TRACE
+
 azure:
   keyvault:
-    # Endpoint do seu Key Vault
+    # Endpoint for Azure Key Vault - MUST be set via environment variable or secure source
     url: ${AZURE_KEYVAULT_URL}
-    # Alias do certificado importado
     cert:
+      # Alias of the certificate within Key Vault - MUST be set
       alias: ${AZURE_KEYVAULT_CERT_ALIAS}
-
   client:
-    # Client ID (App Registration)
+    # Client ID for Azure App Registration - MUST be set via environment variable or secure source
     id: ${AZURE_CLIENT_ID}
-    # Client Secret (App Registration)
+    # Client Secret for Azure App Registration - MUST be set via environment variable or secure source
     secret: ${AZURE_CLIENT_SECRET}
-
   tenant:
-    # Tenant ID do Azure AD
+    # Tenant ID for Azure AD - MUST be set via environment variable or secure source
     id: ${AZURE_TENANT_ID}
 
+# Springdoc OpenAPI configuration
+springdoc:
+  api-docs:
+    path: /api-docs
+  swagger-ui:
+    path: /swagger-ui.html
 

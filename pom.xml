@@ -8,21 +8,31 @@
     <artifactId>notafacil</artifactId>
     <version>1.0.0</version>
     <packaging>jar</packaging>
+
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
+        <!-- Consider updating to the latest stable Spring Boot 3.x version -->
         <version>3.4.5</version>
         <relativePath/>
     </parent>
+
     <properties>
-        <java.version>21</java.version>
+        <java.version>11</java.version>
         <jakarta.version>4.0.0</jakarta.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <mapstruct.version>1.5.5.Final</mapstruct.version>
+        <springdoc-openapi.version>2.5.0</springdoc-openapi.version> <!-- Updated Springdoc version -->
+        <azure-identity.version>1.12.2</azure-identity.version>
+        <azure-keyvault-jca.version>2.10.1</azure-keyvault-jca.version>
+        <azure-keyvault-certificates.version>4.4.0</azure-keyvault-certificates.version>
+        <lombok.version>1.18.32</lombok.version> <!-- Updated Lombok version -->
+        <nfse.service.url>http://isshomo.sefin.fortaleza.ce.gov.br/grpfor-iss/ServiceGinfesImplService</nfse.service.url> <!-- Added default WSDL URL for build -->
     </properties>
+
     <dependencies>
-        <!-- Web starter, mas removendo o Tomcat -->
+        <!-- Spring Boot Starters -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-web</artifactId>
@@ -33,7 +43,6 @@
                 </exclusion>
             </exclusions>
         </dependency>
-        <!-- Adiciona o Jetty como servidor embutido -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-jetty</artifactId>
@@ -51,16 +60,29 @@
             <artifactId>spring-boot-starter-actuator</artifactId>
         </dependency>
         <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-security</artifactId> <!-- Added Spring Security -->
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-data-jpa</artifactId>
+        </dependency>
+
+        <!-- API Documentation -->
+        <dependency>
             <groupId>org.springdoc</groupId>
             <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
-            <version>2.1.0</version>
+            <version>${springdoc-openapi.version}</version>
         </dependency>
+
+        <!-- Mapping -->
         <dependency>
             <groupId>org.mapstruct</groupId>
             <artifactId>mapstruct</artifactId>
             <version>${mapstruct.version}</version>
         </dependency>
-        <!-- Jakarta RI -->
+
+        <!-- Jakarta EE APIs (for JAX-WS, JAXB, etc.) -->
         <dependency>
             <groupId>jakarta.xml.bind</groupId>
             <artifactId>jakarta.xml.bind-api</artifactId>
@@ -72,42 +94,86 @@
             <version>${jakarta.version}</version>
         </dependency>
         <dependency>
+            <groupId>jakarta.annotation</groupId>
+            <artifactId>jakarta.annotation-api</artifactId>
+            <!-- Use version managed by Spring Boot parent -->
+        </dependency>
+
+        <!-- JAX-WS Runtime -->
+        <dependency>
             <groupId>com.sun.xml.ws</groupId>
             <artifactId>jaxws-rt</artifactId>
             <version>${jakarta.version}</version>
         </dependency>
+
+        <!-- XML Processing -->
         <dependency>
             <groupId>com.fasterxml.woodstox</groupId>
             <artifactId>woodstox-core</artifactId>
-            <version>6.5.0</version>
+            <version>6.5.1</version> <!-- Added explicit version -->
         </dependency>
-        <!-- Jakarta Annotations (inclui PostConstruct etc.) -->
-        <dependency>
-            <groupId>jakarta.annotation</groupId>
-            <artifactId>jakarta.annotation-api</artifactId>
-            <version>2.1.1</version>
-        </dependency>
+
+        <!-- Azure SDK -->
         <dependency>
             <groupId>com.azure</groupId>
             <artifactId>azure-identity</artifactId>
-            <version>1.12.2</version>
+            <version>${azure-identity.version}</version>
         </dependency>
         <dependency>
             <groupId>com.azure</groupId>
             <artifactId>azure-security-keyvault-jca</artifactId>
-            <version>2.10.1</version>
+            <version>${azure-keyvault-jca.version}</version>
         </dependency>
         <dependency>
             <groupId>com.azure</groupId>
             <artifactId>azure-security-keyvault-certificates</artifactId>
-            <version>4.4.0</version>
+            <version>${azure-keyvault-certificates.version}</version>
+        </dependency>
+
+        <!-- Database -->
+        <dependency>
+            <groupId>org.postgresql</groupId>
+            <artifactId>postgresql</artifactId>
+            <scope>runtime</scope>
+        </dependency>
+
+        <!-- Utilities -->
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <version>${lombok.version}</version>
+            <scope>provided</scope>
+        </dependency>
+
+        <!-- Testing (Optional but Recommended) -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.security</groupId>
+            <artifactId>spring-security-test</artifactId>
+            <scope>test</scope>
         </dependency>
 
     </dependencies>
 
     <build>
         <plugins>
-            <!-- XJC a partir dos XSDs -->
+            <!-- Spring Boot Maven Plugin -->
+            <plugin>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
+                <configuration>
+                    <layers>
+                        <enabled>true</enabled>
+                    </layers>
+                    <finalName>notafacil-${project.version}</finalName> <!-- Use project version in final name -->
+                </configuration>
+            </plugin>
+
+            <!-- JAXB Plugin (Generate classes from XSD) -->
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>jaxb2-maven-plugin</artifactId>
@@ -115,7 +181,6 @@
                 <executions>
                     <execution>
                         <id>xjc-schemas</id>
-                        <!-- gera durante generate-sources -->
                         <phase>generate-sources</phase>
                         <goals>
                             <goal>xjc</goal>
@@ -126,11 +191,13 @@
                             </sources>
                             <outputDirectory>${project.build.directory}/generated-sources/xjc</outputDirectory>
                             <packageName>br.com.notafacil.schemas</packageName>
+                            <clearOutputDir>false</clearOutputDir>
                         </configuration>
                     </execution>
                 </executions>
             </plugin>
-            <!-- WSIMPORT a partir do WSDL -->
+
+            <!-- JAX-WS Plugin (Generate classes from WSDL) -->
             <plugin>
                 <groupId>com.sun.xml.ws</groupId>
                 <artifactId>jaxws-maven-plugin</artifactId>
@@ -142,21 +209,32 @@
                         <goals><goal>wsimport</goal></goals>
                         <configuration>
                             <wsdlUrls>
-                                <wsdlUrl>http://isshomo.sefin.fortaleza.ce.gov.br/grpfor-iss/ServiceGinfesImplService?wsdl</wsdlUrl>
+                                <!-- Consider making WSDL URL configurable -->
+                                <wsdlUrl>${nfse.service.url}?wsdl</wsdlUrl>
                             </wsdlUrls>
                             <sourceDestDir>${project.build.directory}/generated-sources/jaxws</sourceDestDir>
                             <packageName>br.com.notafacil.wsdl</packageName>
                             <keep>true</keep>
                             <extension>true</extension>
+                            <!-- Optional: Add binding files if needed -->
                         </configuration>
                     </execution>
                 </executions>
+                <dependencies>
+                    <!-- Ensure JAXB API is available for the plugin -->
+                    <dependency>
+                        <groupId>jakarta.xml.bind</groupId>
+                        <artifactId>jakarta.xml.bind-api</artifactId>
+                        <version>${jakarta.version}</version>
+                    </dependency>
+                </dependencies>
             </plugin>
-            <!-- MapStruct -->
+
+            <!-- Compiler Plugin (Configure Java version and MapStruct) -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
-                <version>3.10.1</version>
+                <version>3.13.0</version> <!-- Updated compiler plugin version -->
                 <configuration>
                     <source>${java.version}</source>
                     <target>${java.version}</target>
@@ -166,16 +244,61 @@
                             <artifactId>mapstruct-processor</artifactId>
                             <version>${mapstruct.version}</version>
                         </path>
+                        <path>
+                            <groupId>org.projectlombok</groupId>
+                            <artifactId>lombok</artifactId>
+                            <version>${lombok.version}</version>
+                        </path>
+                        <!-- Optional: Add Lombok-MapStruct Binding if needed -->
+                        <!-- <path>
+                            <groupId>org.projectlombok</groupId>
+                            <artifactId>lombok-mapstruct-binding</artifactId>
+                            <version>0.2.0</version>
+                        </path> -->
                     </annotationProcessorPaths>
+                    <compilerArgs>
+                        <arg>-parameters</arg> <!-- Add parameter names to compiled code (useful for Spring) -->
+                    </compilerArgs>
                 </configuration>
             </plugin>
-            <!-- Define finalName para o JAR -->
+
+             <!-- Surefire Plugin (for running tests) -->
             <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <version>3.3.1</version> <!-- Updated surefire plugin version -->
+            </plugin>
+
+            <!-- JAR Plugin (Configure final JAR name) -->
+            <!-- Note: finalName is now handled by spring-boot-maven-plugin -->
+            <!-- <plugin>
                 <artifactId>maven-jar-plugin</artifactId>
+                <version>3.4.2</version>
                 <configuration>
                     <finalName>notafacil-1.0.0</finalName>
                 </configuration>
+            </plugin> -->
+
+            <!-- OWASP Dependency Check (Recommended for vulnerability scanning) -->
+            <!--
+            <plugin>
+                <groupId>org.owasp</groupId>
+                <artifactId>dependency-check-maven</artifactId>
+                <version>9.2.0</version>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>check</goal>
+                        </goals>
+                    </execution>
+                </executions>
+                <configuration>
+                    <failBuildOnCVSS>7</failBuildOnCVSS>
+                </configuration>
             </plugin>
+            -->
         </plugins>
     </build>
+
 </project>
+
